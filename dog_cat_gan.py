@@ -24,7 +24,7 @@ class DCGAN():
         self.input_shape = (self.img_width, self.img_height, 3) #3 channels for color
 
         optimizer_g = Adam(0.0002)
-        optimizer_d = Adam(0.0005)
+        optimizer_d = SGD(0.0005)
 
         #SGD with 0.0002 is super checkerboarded, no smooth lines at all (Epoch 0 and 5)
         #Adam with 0.0002 is a little checkerboarded it still makes smooth shapes (Epoch 0 and 5)
@@ -140,17 +140,21 @@ class DCGAN():
         #y_train shape (1000, )            (num_training_data, )
         x_test, _ = self.preprocess(test, TEST_DIREC+"/")
         y_test = []
-        d_loss, d_acc, g_loss, g_acc = (0., 0., 0., 0.)
+        d_loss = 0.
+        d_acc = 0.
+        g_loss = 0.
+        g_acc = 0.
 
         epochs = 1000
         batch_size = 128
         num_batches = len(x_train)//batch_size + 1
-        k = 3 #number of times to train discriminator for every training of generator
+        k = 2 #number of times to train discriminator for every training of generator
         iterations = num_batches // k + 1
-        batch_index = 0
+
 
         for epoch in range(epochs):
             print("Epoch " + str(epoch))
+            batch_index = 0
 
             for iteration in range(iterations - 1):
                 for batch in range(k):
@@ -175,19 +179,21 @@ class DCGAN():
                 d_acc += d_acc_batch
                 batch_index += 1
 
-            start = batch_size*num_batches
-            end = len(x_train)
-            batches = self.get_batches(start, end, x_train)
-            (d_loss_batch, d_acc_batch) = self.train_D_on_batch(batches)
-            d_loss += d_loss_batch
-            d_acc += d_acc_batch
+            # start = batch_size*batch_index
+            # end = len(x_train)
+            # batches = self.get_batches(start, end, x_train)
+            # (d_loss_batch, d_acc_batch) = self.train_D_on_batch(batches)
+            # print(d_loss_batch)
+            # d_loss += d_loss_batch
+            # d_acc += d_acc_batch
 
             (g_loss_batch, g_acc_batch) = self.train_G_on_batch(batch_size)
             g_loss += g_loss_batch
             g_acc += g_acc_batch
 
-            d_acc /= num_batches
-            g_acc /= num_batches
+            d_acc /= (num_batches - 1)
+            g_acc /= (num_batches - 1)
+
             print("Discriminator -- Loss:%f\tAccuracy%.2f%%\nGenerator -- Loss:%f\tAccuracy%.2f%%" %(d_loss, d_acc*100., g_loss, g_acc*100.))
 
             if epoch % 5 == 0:
