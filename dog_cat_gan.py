@@ -23,8 +23,8 @@ class DCGAN():
         self.img_height = 150
         self.input_shape = (self.img_width, self.img_height, 3) #3 channels for color
 
-        optimizer_g = Adam(0.0002)
-        optimizer_d = SGD(0.0005)
+        optimizer_g = Adam(0.002)
+        optimizer_d = SGD(0.05)
 
         #SGD with 0.0002 is super checkerboarded, no smooth lines at all (Epoch 0 and 5)
         #Adam with 0.0002 is a little checkerboarded it still makes smooth shapes (Epoch 0 and 5)
@@ -110,10 +110,12 @@ class DCGAN():
 
         #Update D params
         d_loss_fake = self.D.train_on_batch(Gz_batch, np.zeros((len(Gz_batch), 1)) ) #fake=0
-        d_loss_real = self.D.train_on_batch(x_batch, np.random.uniform(0.9, 1., size=(len(x_batch), 1)) ) #real=1, positive label smoothing
+        d_loss_real = self.D.train_on_batch(x_batch, np.random.uniform(0.9, 1.0, size=(len(x_batch), 1)) ) #real=1, positive label smoothing
         d_loss = 0.5*np.add(d_loss_real, d_loss_fake)
 
         return d_loss #(loss, accuracy) tuple
+
+
 
 
     def train_G_on_batch(self, batch_size):
@@ -122,7 +124,7 @@ class DCGAN():
 
         #Update G params
         noise_batch =  np.random.normal(0.0, 1.0, size=(batch_size, 100)) #generate the same number of noisy images as in the training batch
-        g_loss = self.stacked.train_on_batch(noise_batch, np.random.uniform(0.9, 1., size=(batch_size, 1)) ) #G wants D to mark these as real=1
+        g_loss = self.stacked.train_on_batch(noise_batch, np.ones((batch_size, 1)) ) #G wants D to mark these as real=1
 
         return g_loss #(loss, accuracy) tuple
 
@@ -147,9 +149,13 @@ class DCGAN():
 
         epochs = 1000
         batch_size = 128
-        num_batches = len(x_train)//batch_size + 1
-        k = 2 #number of times to train discriminator for every training of generator
-        iterations = num_batches // k + 1
+        num_batches = len(x_train)//batch_size
+        if len(x_train) % batch_size != 0:
+            num_batches += 1
+        k = 3 #number of times to train discriminator for every training of generator
+        iterations = num_batches // k
+        if num_batches % k != 0:
+            iterations += 1
 
 
         for epoch in range(epochs):
@@ -170,6 +176,9 @@ class DCGAN():
                 g_acc += g_acc_batch
 
             leftover_batches = num_batches % k
+            if leftover_batches == 0:
+                leftover_batches = k
+
             for batch in range(leftover_batches - 1):
                 start = batch_size*batch_index
                 end = batch_size*(batch_index+1)
@@ -179,20 +188,20 @@ class DCGAN():
                 d_acc += d_acc_batch
                 batch_index += 1
 
-            # start = batch_size*batch_index
-            # end = len(x_train)
-            # batches = self.get_batches(start, end, x_train)
-            # (d_loss_batch, d_acc_batch) = self.train_D_on_batch(batches)
-            # print(d_loss_batch)
-            # d_loss += d_loss_batch
-            # d_acc += d_acc_batch
+            start = batch_size*batch_index
+            end = len(x_train)
+            batches = self.get_batches(start, end, x_train)
+            (d_loss_batch, d_acc_batch) = self.train_D_on_batch(batches)
+            print(d_loss_batch)
+            d_loss += d_loss_batch
+            d_acc += d_acc_batch
 
             (g_loss_batch, g_acc_batch) = self.train_G_on_batch(batch_size)
             g_loss += g_loss_batch
             g_acc += g_acc_batch
 
-            d_acc /= (num_batches - 1)
-            g_acc /= (num_batches - 1)
+            d_acc /= (num_batches)
+            g_acc /= (num_batches)
 
             print("Discriminator -- Loss:%f\tAccuracy%.2f%%\nGenerator -- Loss:%f\tAccuracy%.2f%%" %(d_loss, d_acc*100., g_loss, g_acc*100.))
 
