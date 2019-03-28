@@ -23,8 +23,8 @@ class DCGAN():
         self.img_height = 150
         self.input_shape = (self.img_width, self.img_height, 3) #3 channels for color
 
-        optimizer_g = Adam(0.002)
-        optimizer_d = SGD(0.05)
+        optimizer_g = Adam(0.0002)
+        optimizer_d = SGD(0.0005)
 
         #SGD with 0.0002 is super checkerboarded, no smooth lines at all (Epoch 0 and 5)
         #Adam with 0.0002 is a little checkerboarded it still makes smooth shapes (Epoch 0 and 5)
