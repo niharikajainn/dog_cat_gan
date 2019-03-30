@@ -38,7 +38,6 @@ class DCGAN():
         self.G = self.build_generator()
         self.G.summary()
 
-        # self.D.trainable = False
         self.stacked = self.build_stacked()
         self.stacked.compile(loss=keras.losses.binary_crossentropy, optimizer = optimizer_g, metrics=[self.custom_acc])
         self.stacked.summary()
@@ -150,7 +149,7 @@ class DCGAN():
         # g_acc = 0.
 
         epochs = 1000
-        batch_size = 128
+        batch_size = 256
         num_batches = len(x_train)//batch_size
         if len(x_train) % batch_size != 0:
             num_batches += 1
