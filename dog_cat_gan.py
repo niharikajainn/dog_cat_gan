@@ -50,16 +50,18 @@ class DCGAN():
     #build the cnn
     def build_discriminator(self):
         D = Sequential()
-        D.add(Conv2D(32, kernel_size=(3,3), input_shape=self.input_shape))
+        D.add(Conv2D(32, kernel_size=(4,4), strides=(2,2), padding='valid', input_shape=self.input_shape))
         D.add(LeakyReLU())
-        D.add(AveragePooling2D(pool_size=(2,2)))
+        #D.add(AveragePooling2D(pool_size=(2,2)))
         D.add(Dropout(0.4))
-        D.add(Conv2D(64, kernel_size=(3,3)))
+        D.add(Conv2D(64, kernel_size=(4,4), strides=(2,2), padding='valid'))
+        D.add(BatchNormalization())
         D.add(LeakyReLU())
-        D.add(AveragePooling2D(pool_size=(2,2)))
+        #D.add(AveragePooling2D(pool_size=(2,2)))
         D.add(Dropout(0.4))
         D.add(Flatten())
         D.add(Dense(64))
+        D.add(BatchNormalization())
         D.add(LeakyReLU())
         #D.add(Dropout(0.5))
         D.add(Dense(1, activation='sigmoid'))
@@ -70,12 +72,12 @@ class DCGAN():
         G = Sequential()
         G.add(Dense(36*36*64, input_shape=(100,)))
         G.add(BatchNormalization(momentum=0.9))
-        G.add(LeakyReLU())
+        G.add(Activation('relu'))
         G.add(Reshape((36,36,64)))
         G.add(Dropout(0.4))
         G.add(Conv2DTranspose(128, kernel_size=(4,4), strides=(2,2)))
         G.add(BatchNormalization(momentum=0.9))
-        G.add(LeakyReLU())
+        G.add(Activation('relu'))
         G.add(Dropout(0.4))
         G.add(Conv2DTranspose(64, kernel_size=(4,4), strides=(2,2)))
         G.add(BatchNormalization(momentum=0.9))
@@ -149,7 +151,7 @@ class DCGAN():
         # g_acc = 0.
 
         epochs = 1000
-        batch_size = 256
+        batch_size = 10
         num_batches = len(x_train)//batch_size
         if len(x_train) % batch_size != 0:
             num_batches += 1
